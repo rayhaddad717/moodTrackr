@@ -1,5 +1,7 @@
 package com.rayhaddadcompany.moodtrackr.onboarding
 
+import android.annotation.SuppressLint
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -10,6 +12,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,7 +23,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.selection.TextSelectionColors
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -31,45 +35,60 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Color.Companion.Gray
 import androidx.compose.ui.graphics.Color.Companion.Red
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.rayhaddadcompany.moodtrackr.Constants
 import com.rayhaddadcompany.moodtrackr.R
 import com.rayhaddadcompany.moodtrackr.ui.theme.Black
 import com.rayhaddadcompany.moodtrackr.ui.theme.BlueBackground
 import com.rayhaddadcompany.moodtrackr.ui.theme.HeaderWhiteColor
 import com.rayhaddadcompany.moodtrackr.ui.theme.BlueNextTitle
+import com.rayhaddadcompany.moodtrackr.ui.theme.BorderColor
 import com.rayhaddadcompany.moodtrackr.ui.theme.LanguageSelectBackground
 import com.rayhaddadcompany.moodtrackr.ui.theme.LanguageSelectBackgroundDisabled
 import com.rayhaddadcompany.moodtrackr.ui.theme.LightBlueBackground
 import com.rayhaddadcompany.moodtrackr.ui.theme.LightBlueBackgroundIconTint
 import com.rayhaddadcompany.moodtrackr.ui.theme.LightPinkBackground
+import com.rayhaddadcompany.moodtrackr.ui.theme.LightPurpleBackground
 import com.rayhaddadcompany.moodtrackr.ui.theme.PinkBackround
 import com.rayhaddadcompany.moodtrackr.ui.theme.PinkNextColor
 import com.rayhaddadcompany.moodtrackr.ui.theme.PinkTintColor
+import com.rayhaddadcompany.moodtrackr.ui.theme.PurpleBackground
+import com.rayhaddadcompany.moodtrackr.ui.theme.PurpleNextColor
+import com.rayhaddadcompany.moodtrackr.ui.theme.PurpleTintColor
 import com.rayhaddadcompany.moodtrackr.ui.theme.White
 
+data class MentalOptions(
+    val name:String,
+    val isCustom:Boolean,
+)
+
 @Composable
-fun Onboarding(){
-    var currentStep by remember { mutableStateOf(1) }
+fun Onboarding(initialStep:Int?){
+    var currentStep by remember { mutableStateOf(if(initialStep != null) initialStep else 1) }
     var nickname  by remember { mutableStateOf<String>("") }
+    var mentalOptionsSelectedSet = mutableSetOf<MentalOptions>()
+    var mentalOptionsSelectedSetSize by remember { mutableStateOf(mentalOptionsSelectedSet.size) }
+    mentalOptionsSelectedSet.add(Constants.MENTAL_OPTIONS.get(0))
     if(currentStep == 1){
         OnboardingStep1(currentStep = currentStep, onCurrentStepChanged = {currentStep = it})
     }
@@ -84,17 +103,52 @@ fun Onboarding(){
         OnboardingStep4(currentStep = currentStep,onCurrentStepChanged = { if(validateNickname(nickname)) currentStep = it},nickname, onChangeNickname = { nickname = it})
     }
 
+    else if(currentStep == 5){
+        OnboardingStep5(currentStep = currentStep,onCurrentStepChanged = { if(validateMentalOptionsSelected(mentalOptionsSelectedSet)) currentStep = it},mentalOptionsSelectedSet,onMentalOptionsSelectedChange = {a:MutableSet<MentalOptions>,b:MentalOptions ->mentalOptionsSelectedSetSize += 1 ; handleMentalOptionClick(a,b);Log.d("RAY ${mentalOptionsSelectedSet.size}","RAY")})
+    }
+
 }
 
 fun validateNickname(nickname:String):Boolean{
-    if(nickname.isEmpty() || nickname.isBlank())return false;
+    if(nickname.length < 3 || nickname.isEmpty() || nickname.isBlank())return false;
     return true
 }
 
+fun validateMentalOptionsSelected(mentalOptionsSelectedSet:Set<MentalOptions>): Boolean{
+    return mentalOptionsSelectedSet.size > 0
+}
+
+
+//@Preview
+//@Composable
+//fun previewOnboarding(){
+//    Onboarding(1)
+//
+//}
+//@Preview
+//@Composable
+//fun previewOnboarding2(){
+//    Onboarding(2)
+//
+//}
+//@Preview
+//@Composable
+//fun previewOnboarding3(){
+//    Onboarding(3)
+//
+//}
+//@Preview
+//@Composable
+//fun previewOnboarding4(){
+//    Onboarding(4)
+//
+//}
+
 @Preview
 @Composable
-fun previewOnboarding(){
-    Onboarding()
+fun previewOnboarding5(){
+    Onboarding(5)
+
 }
 
 
@@ -192,7 +246,6 @@ fun OnboardingStep1(currentStep:Int,onCurrentStepChanged:(Int)->Unit){
                 horizontalArrangement = Arrangement.Center,
                 modifier =
                 Modifier
-                    .padding(horizontal = 30.dp)
                     .fillMaxWidth()
             ){
                 btn<Unit>("start",{onCurrentStepChanged(currentStep + 1)})
@@ -374,8 +427,8 @@ fun OnboardingStep3(currentStep: Int,onCurrentStepChanged:(Int)->Unit){
                    modifier=Modifier.height(30.dp)
                )
                Text(
-                   text="Choose your language",
-                   fontSize = MaterialTheme.typography.bodyMedium.fontSize,
+                   text="Choose a language",
+                   fontSize = MaterialTheme.typography.headlineMedium.fontSize,
                    fontFamily = MaterialTheme.typography.headlineMedium.fontFamily,
                    color = HeaderWhiteColor,
                    textAlign = TextAlign.Center,
@@ -392,7 +445,7 @@ fun OnboardingStep3(currentStep: Int,onCurrentStepChanged:(Int)->Unit){
                     Row(
                         modifier = Modifier
                             .clip(RoundedCornerShape(15.dp))
-                            .border(4.dp, Color(0xFF171819), RoundedCornerShape(15.dp))
+                            .border(4.dp, BorderColor, RoundedCornerShape(15.dp))
                             .fillMaxWidth()
                             .background(LanguageSelectBackground)
                             .padding(vertical = 25.dp),
@@ -593,7 +646,7 @@ fun OnboardingStep4(currentStep: Int,onCurrentStepChanged:(Int)->Unit,nickname:S
 
                 TextField(
                     value = nickname,
-                    onValueChange = {hasError = nickname.isBlank() || nickname.isEmpty(); onChangeNickname(it) },
+                    onValueChange = {hasError = false; onChangeNickname(it) },
                     placeholder = @Composable { Text(text = "Jam") },
                     colors = TextFieldDefaults.textFieldColors(
                         textColor = Black,
@@ -608,7 +661,19 @@ fun OnboardingStep4(currentStep: Int,onCurrentStepChanged:(Int)->Unit,nickname:S
 
                     ),
                     isError = hasError,
-                    supportingText = {  if (hasError) Text("Invalid Nickname") else null}
+                    supportingText = {  if (hasError) Text("Invalid Nickname") else null},
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Text,
+                        imeAction = ImeAction.Next
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onNext = {
+                            if (nickname.length < 3) hasError = true else onCurrentStepChanged(
+                                currentStep + 1
+                            )
+                        }
+                    ),
+                    singleLine = true
                 )
 
         }
@@ -624,7 +689,7 @@ fun OnboardingStep4(currentStep: Int,onCurrentStepChanged:(Int)->Unit,nickname:S
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable {
-                        if (nickname.isBlank()) hasError = true else onCurrentStepChanged(
+                        if (nickname.length < 3) hasError = true else onCurrentStepChanged(
                             currentStep + 1
                         )
                     },
@@ -657,4 +722,234 @@ fun OnboardingStep4(currentStep: Int,onCurrentStepChanged:(Int)->Unit,nickname:S
 
 
 }
+
+
+
+
+@SuppressLint("UnrememberedMutableState")
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun OnboardingStep5(currentStep: Int,onCurrentStepChanged:(Int)->Unit,mentalOptionsSelectedSet:MutableSet<MentalOptions>,onMentalOptionsSelectedChange:(MutableSet<MentalOptions>,MentalOptions)->Unit){
+    var hasError by remember { mutableStateOf(false) }
+    var customMentalOption by remember { mutableStateOf("") }
+
+    var list = remember { Constants.MENTAL_OPTIONS.toMutableStateList() }
+    //try the set
+    var set:Set<Int> = setOf<Int>()
+    set.toMutableStateList()
+
+
+
+    Column(
+        modifier =
+        Modifier
+            .background(PurpleBackground)
+            .fillMaxSize()
+            .padding(
+                vertical = 15.dp,
+                horizontal = 10.dp
+            ),
+        verticalArrangement = Arrangement.SpaceBetween
+    ) {
+
+
+        Column(
+            modifier =
+            Modifier
+                .padding(vertical = 30.dp)
+                .weight(0.35f),
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                modifier = Modifier
+//                .weight(1f)
+                    .fillMaxWidth()
+            ) {
+
+                Icon(
+                    painter = painterResource(id = R.drawable.logo),
+                    tint = PurpleTintColor,
+                    contentDescription = "app logo", modifier = Modifier
+                        .clip(CircleShape)
+                        .border(BorderStroke(1.dp, PurpleBackground), CircleShape)
+                        .background(
+                            color = LightPurpleBackground
+                        )
+                        .width(100.dp)
+                        .height(100.dp)
+
+                )
+            }
+            Spacer(
+                modifier = Modifier.height(30.dp)
+            )
+            Column(
+            ) {
+
+                Text(
+                    text = "Choose the options that apply to you",
+                    fontSize = MaterialTheme.typography.headlineMedium.fontSize,
+                    fontFamily = MaterialTheme.typography.headlineMedium.fontFamily,
+                    color = HeaderWhiteColor,
+                    modifier = Modifier.fillMaxWidth(),
+                    maxLines = 2
+                )
+                Spacer(
+                    modifier = Modifier.height(10.dp)
+                )
+            }
+        }
+        Column(
+    modifier = Modifier
+        .weight(0.5f)
+        .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.Top,
+
+        ) {
+
+        for(mentalOption in list) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+
+            ){
+                var optionSelected by remember { mutableStateOf(mentalOptionsSelectedSet.contains(mentalOption)) }
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(15.dp))
+                    .border(4.dp, BorderColor, RoundedCornerShape(15.dp))
+                    .background(LightPurpleBackground)
+                    .fillMaxWidth()
+                    .padding(vertical = 20.dp)
+                    .clickable {
+                        onMentalOptionsSelectedChange(
+                            mentalOptionsSelectedSet,
+                            mentalOption
+                        );
+                        optionSelected = !optionSelected;
+                    }
+
+
+            ) {
+                Text(
+                    text = mentalOption.name,
+                    fontSize = MaterialTheme.typography.headlineMedium.fontSize,
+                    fontFamily = MaterialTheme.typography.headlineMedium.fontFamily,
+                    color = MaterialTheme.typography.headlineMedium.color,
+                )
+
+            }
+                if(optionSelected) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.check_icon),
+                        contentDescription = "selected",
+                        tint = Black,
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .padding(end = 25.dp)
+                    )
+                }
+        }
+            Spacer(
+                modifier = Modifier.height(20.dp)
+            )
+
+        }
+        Row(
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .clip(RoundedCornerShape(15.dp))
+                .background(LightPurpleBackground)
+                .fillMaxWidth()
+                .padding(vertical = 10.dp)
+
+
+        ) {
+
+            TextField(
+                value = customMentalOption,
+                onValueChange = { hasError = false; customMentalOption = it },
+                placeholder = @Composable { Text(text = "enter your own") },
+                colors = TextFieldDefaults.textFieldColors(
+                    textColor = Black,
+                    containerColor = LightPurpleBackground,
+                    cursorColor = PurpleBackground,
+                    focusedIndicatorColor = LightPurpleBackground,
+                    unfocusedIndicatorColor = LightPurpleBackground,
+                    errorCursorColor = Red,
+                    errorIndicatorColor = Red,
+                    errorLabelColor = Red,
+                    errorSupportingTextColor = Red
+
+                ),
+                isError = hasError,
+                supportingText = { if (hasError) Text("Invalid Nickname") else null },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Text,
+                    imeAction = ImeAction.Next
+                ),
+                keyboardActions = KeyboardActions(
+                    onNext = {
+                        if (customMentalOption.length < 3) hasError = true else
+                            list.add(
+                                MentalOptions(
+                                    name = customMentalOption,
+                                    isCustom = true
+                                )
+                            )
+                    }
+                ),
+                singleLine = true
+            )
+
+        }
+    }
+        Column(
+            verticalArrangement = Arrangement.Bottom,
+            modifier = Modifier.weight(0.1f)
+        ){
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        if (customMentalOption.length < 3) hasError =
+                            true else onCurrentStepChanged(
+                            currentStep + 1
+                        )
+                    },
+                horizontalArrangement = Arrangement.End,
+
+                ){
+
+                Text(
+                    text="next",
+                    fontSize = MaterialTheme.typography.bodyMedium.fontSize,
+                    fontFamily = MaterialTheme.typography.bodyMedium.fontFamily,
+                    color = PurpleNextColor
+                )
+                Icon(
+                    painter = painterResource(id = R.drawable.arrow_next),
+                    contentDescription = "Next step",
+                    modifier =
+                    Modifier
+                        .width(25.dp)
+                        .height(25.dp),
+
+                    tint = PurpleNextColor
+
+                )
+            }
+        }
+
+    }
+
+}
+fun handleMentalOptionClick(mentalOptionsSelectedSet:MutableSet<MentalOptions>,mentalOption:MentalOptions){
+    if(mentalOptionsSelectedSet.contains(mentalOption)) mentalOptionsSelectedSet.remove(mentalOption);
+    else mentalOptionsSelectedSet.add(mentalOption)
+}
+
 

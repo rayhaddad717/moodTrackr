@@ -15,6 +15,7 @@ val White = Color(0xFFFFFFFF)
 
 //onboarding
 val HeaderWhiteColor = Color(0xFFF7F3FF)
+val BorderColor  = Color(0xFF171819)
 //step2
 val BlueBackground = Color(0xFF859DF2)
 val LightBlueBackgroundIconTint = Color(0xFF4361AF)
@@ -30,3 +31,9 @@ val PinkBackround = Color(0xFFE18CD9)
 val LightPinkBackground = Color(0xFFFFE8FD)
 val PinkTintColor = Color(0xFFD04DC3)
 val PinkNextColor = Color(0xFF721B69)
+//step 5
+//step 4
+val PurpleBackground = Color(0xFF9973E9)
+val LightPurpleBackground = Color(0xFFE7DCFF)
+val PurpleTintColor = Color(0xFF795EB4)
+val PurpleNextColor = Color(0xFF371B72)

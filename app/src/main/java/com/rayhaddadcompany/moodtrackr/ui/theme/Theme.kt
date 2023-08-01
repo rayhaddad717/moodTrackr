@@ -62,7 +62,7 @@ private val typographyScheme = Typography(
         fontFamily = FontFamily.SansSerif
     ),
     headlineMedium = TextStyle(
-        fontSize = 35.sp,
+        fontSize = 25.sp,
         color = Black,
         fontFamily = FontFamily.SansSerif
     ),
