@@ -2,6 +2,7 @@ package com.rayhaddadcompany.moodtrackr.onboarding
 
 import android.annotation.SuppressLint
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -47,6 +48,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Color.Companion.Gray
 import androidx.compose.ui.graphics.Color.Companion.Red
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -83,12 +85,10 @@ data class MentalOptions(
 )
 
 @Composable
-fun Onboarding(initialStep:Int?){
+fun Onboarding(initialStep:Int?,handleOnboardingDone:(String,MutableSet<MentalOptions>)->Unit = {a,b->Unit}){
     var currentStep by remember { mutableStateOf(if(initialStep != null) initialStep else 1) }
     var nickname  by remember { mutableStateOf<String>("") }
-    var mentalOptionsSelectedSet = mutableSetOf<MentalOptions>()
-    var mentalOptionsSelectedSetSize by remember { mutableStateOf(mentalOptionsSelectedSet.size) }
-    mentalOptionsSelectedSet.add(Constants.MENTAL_OPTIONS.get(0))
+    var mentalOptionsSelectedSet = remember { mutableSetOf<MentalOptions>(Constants.MENTAL_OPTIONS.get(0)).toMutableStateList()}
     if(currentStep == 1){
         OnboardingStep1(currentStep = currentStep, onCurrentStepChanged = {currentStep = it})
     }
@@ -104,7 +104,11 @@ fun Onboarding(initialStep:Int?){
     }
 
     else if(currentStep == 5){
-        OnboardingStep5(currentStep = currentStep,onCurrentStepChanged = { if(validateMentalOptionsSelected(mentalOptionsSelectedSet)) currentStep = it},mentalOptionsSelectedSet,onMentalOptionsSelectedChange = {a:MutableSet<MentalOptions>,b:MentalOptions ->mentalOptionsSelectedSetSize += 1 ; handleMentalOptionClick(a,b);Log.d("RAY ${mentalOptionsSelectedSet.size}","RAY")})
+        OnboardingStep5(onSubmit = { currentStep = 6},mentalOptionsSelectedSet.toMutableSet(),
+            onMentalOptionsSelectedChange = {if(mentalOptionsSelectedSet.contains(it)) mentalOptionsSelectedSet.remove(it); else mentalOptionsSelectedSet.add(it)})
+    }
+    else{
+        handleOnboardingDone(nickname,mentalOptionsSelectedSet.toMutableSet())
     }
 
 }
@@ -729,14 +733,15 @@ fun OnboardingStep4(currentStep: Int,onCurrentStepChanged:(Int)->Unit,nickname:S
 @SuppressLint("UnrememberedMutableState")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun OnboardingStep5(currentStep: Int,onCurrentStepChanged:(Int)->Unit,mentalOptionsSelectedSet:MutableSet<MentalOptions>,onMentalOptionsSelectedChange:(MutableSet<MentalOptions>,MentalOptions)->Unit){
+fun OnboardingStep5(onSubmit:(MutableSet<MentalOptions>)->Unit,optionSelectedSet:MutableSet<MentalOptions>,onMentalOptionsSelectedChange:(MentalOptions)->Unit){
     var hasError by remember { mutableStateOf(false) }
     var customMentalOption by remember { mutableStateOf("") }
 
     var list = remember { Constants.MENTAL_OPTIONS.toMutableStateList() }
-    //try the set
-    var set:Set<Int> = setOf<Int>()
-    set.toMutableStateList()
+
+    var numberOfAddedOptions by remember { mutableStateOf(0) }
+    val MAX_NUMBER_OF_CUSTOM_OPTIONS = 3;
+    val context = LocalContext.current;
 
 
 
@@ -813,23 +818,24 @@ fun OnboardingStep5(currentStep: Int,onCurrentStepChanged:(Int)->Unit,mentalOpti
                     .fillMaxWidth()
 
             ){
-                var optionSelected by remember { mutableStateOf(mentalOptionsSelectedSet.contains(mentalOption)) }
+                var rowModifier = Modifier
+                    .clip(RoundedCornerShape(15.dp))
+                    .background(LightPurpleBackground)
+                    .fillMaxWidth()
+                    .clickable {
+                        onMentalOptionsSelectedChange(
+                            mentalOption
+                        );
+                    }
+
+
+                if(optionSelectedSet.contains(mentalOption)) rowModifier = rowModifier
+                    .border(4.dp, BorderColor, RoundedCornerShape(15.dp))
+                rowModifier = rowModifier.padding(vertical = 20.dp)
             Row(
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(15.dp))
-                    .border(4.dp, BorderColor, RoundedCornerShape(15.dp))
-                    .background(LightPurpleBackground)
-                    .fillMaxWidth()
-                    .padding(vertical = 20.dp)
-                    .clickable {
-                        onMentalOptionsSelectedChange(
-                            mentalOptionsSelectedSet,
-                            mentalOption
-                        );
-                        optionSelected = !optionSelected;
-                    }
+                modifier =rowModifier
 
 
             ) {
@@ -841,7 +847,7 @@ fun OnboardingStep5(currentStep: Int,onCurrentStepChanged:(Int)->Unit,mentalOpti
                 )
 
             }
-                if(optionSelected) {
+                if(optionSelectedSet.contains(mentalOption)) {
                     Icon(
                         painter = painterResource(id = R.drawable.check_icon),
                         contentDescription = "selected",
@@ -886,20 +892,31 @@ fun OnboardingStep5(currentStep: Int,onCurrentStepChanged:(Int)->Unit,mentalOpti
 
                 ),
                 isError = hasError,
-                supportingText = { if (hasError) Text("Invalid Nickname") else null },
+                supportingText = { if (hasError) Text("Invalid Option") else null },
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Text,
                     imeAction = ImeAction.Next
                 ),
                 keyboardActions = KeyboardActions(
                     onNext = {
-                        if (customMentalOption.length < 3) hasError = true else
-                            list.add(
+                        if(numberOfAddedOptions >= MAX_NUMBER_OF_CUSTOM_OPTIONS){
+                            Toast.makeText(context,"You cannot add more than 3 custom options",
+                                Toast.LENGTH_SHORT).show()
+                        }
+                        else if (customMentalOption.length < 3) hasError = true else
+                        {
+                            val newOption =
                                 MentalOptions(
                                     name = customMentalOption,
                                     isCustom = true
                                 )
-                            )
+                            customMentalOption = ""
+                            onMentalOptionsSelectedChange(
+                                newOption
+                            );
+                            list.add(newOption)
+                            numberOfAddedOptions++
+                        }
                     }
                 ),
                 singleLine = true
@@ -915,9 +932,10 @@ fun OnboardingStep5(currentStep: Int,onCurrentStepChanged:(Int)->Unit,mentalOpti
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable {
-                        if (customMentalOption.length < 3) hasError =
-                            true else onCurrentStepChanged(
-                            currentStep + 1
+                        if (optionSelectedSet.size == 0) {
+                            Toast.makeText(context,"At least choose one option",Toast.LENGTH_SHORT).show()
+                        } else onSubmit(
+                            optionSelectedSet.toMutableSet()
                         )
                     },
                 horizontalArrangement = Arrangement.End,
